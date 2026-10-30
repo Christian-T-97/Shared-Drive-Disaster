@@ -86,7 +86,7 @@ A fictional confidential HR text file was opened, edited, and saved successfully
 ## Evidence
 
 Screenshots and supporting evidence are stored below:
-![HR confidential file access](screenhots/02-HR-confidential-file-access.png)
+![HR confidential file access](screenshots/02-HR-confidential-file-access.png)
 
 ## Key Learning
 
