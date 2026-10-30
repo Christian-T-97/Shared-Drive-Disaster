@@ -108,8 +108,8 @@ Therefore, this is a preliminary result, not yet conclusive evidence that the HR
 
 ## 6. Next Investigation Steps
 
-1. Confirm the security identity used for the HR file-access test.
-2. Verify that the HR user can read and modify the confidential HR file.
+1. Confirm the security identity used for the HR file-access test. = VERIFIED
+2. Verify that the HR user can read and modify the confidential HR file. = VERIFIED
 3. Test the same file using an ordinary Employees account.
 4. Record whether access is allowed or denied.
 5. Investigate unexpected access, including inherited permissions and group memberships.
@@ -123,3 +123,24 @@ Therefore, this is a preliminary result, not yet conclusive evidence that the HR
 **Testing:** A file was edited and saved, but the account context for that operation still requires confirmation.
 
 **Remediation:** Not yet completed. Unauthorized employee access has not yet been tested.
+
+----
+
+### HR Confidential Access Test
+
+**Test account:** Gervonta (member of the HR group)
+
+**Target directory:** `C:\Users\Admin1\Company\HR\Confidential`
+
+**Assigned permission:** Modify
+
+**Test procedure:**
+1. Launched a PowerShell session using Gervonta's credentials.
+2. Used `whoami` to verify the authenticated identity.
+3. Listed the contents of the HR Confidential directory.
+4. Used `Add-Content` to append text to an existing file.
+5. Used `Get-Content` to verify the updated file contents.
+
+**Result:** Successful. Gervonta was able to access the directory, modify an existing file, and read the updated contents.
+
+**Conclusion:** The HR group's assigned Modify permission is functioning as expected for this test account.
