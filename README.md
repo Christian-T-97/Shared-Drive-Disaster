@@ -85,7 +85,7 @@ A fictional confidential HR text file was opened, edited, and saved successfully
 
 ## Evidence
 
-Screenshots and supporting evidence are stored in the `screenshots/` directory.
+Screenshots and supporting evidence are stored below:
 ![HR confidential file access](screeshots/02-HR-confidential-file-access.png)
 
 ## Key Learning
