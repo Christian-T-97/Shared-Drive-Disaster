@@ -144,3 +144,22 @@ Therefore, this is a preliminary result, not yet conclusive evidence that the HR
 **Result:** Successful. Gervonta was able to access the directory, modify an existing file, and read the updated contents.
 
 **Conclusion:** The HR group's assigned Modify permission is functioning as expected for this test account.
+
+----
+
+### Unauthorized Employee Access Test
+
+**Test account:** Mary (member of the Employees group)
+
+**Target directory:** `C:\Users\Admin1\Company\HR\Confidential`
+
+**Expected permission:** No access
+
+**Test procedure:**
+1. Launched a PowerShell session using Mary's credentials.
+2. Verified the authenticated identity using `whoami`.
+3. Attempted to list the contents of the HR Confidential directory using `Get-ChildItem`.
+
+**Result:** Access denied. Windows returned an `UnauthorizedAccessException` when Mary attempted to enumerate the directory.
+
+**Conclusion:** The Employee account was unable to access the HR Confidential directory, as intended by the access-control policy.
