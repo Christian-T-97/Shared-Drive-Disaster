@@ -163,3 +163,24 @@ Therefore, this is a preliminary result, not yet conclusive evidence that the HR
 **Result:** Access denied. Windows returned an `UnauthorizedAccessException` when Mary attempted to enumerate the directory.
 
 **Conclusion:** The Employee account was unable to access the HR Confidential directory, as intended by the access-control policy.
+
+----
+
+### Employee Shared Folder Access Test
+
+**Test account:** Mary (member of the Employees group)
+
+**Target directory:** `C:\Users\Admin1\Company\Employees\Shared`
+
+**Assigned permission:** Modify
+
+**Test procedure:**
+1. Launched a PowerShell session using Mary's credentials.
+2. Verified the authenticated identity using `whoami`.
+3. Listed the contents of the Employees Shared directory.
+4. Used `Add-Content` to append text to an existing file.
+5. Used `Get-Content` to verify the updated file contents.
+
+**Result:** Successful. Mary was able to access and modify a file in the Employees Shared directory.
+
+**Conclusion:** The Employees group's assigned Modify permission is functioning as expected for this test account.
