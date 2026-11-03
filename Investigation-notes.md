@@ -1,157 +1,103 @@
 # Investigation Notes — Shared Drive Disaster
 
-## 1. Initial Setup
+## 1. Initial Environment Setup
 
-Created a Windows 11 lab environment with local accounts for three departments:
+Created a simulated Windows company environment using Windows 11.
 
+**User accounts:**
+- Two HR users
+- Two IT users
+- Two Employees users
+
+**Local security groups:**
 - HR
 - IT
 - Employees
 
-Created corresponding local security groups and assigned users to their intended departmental groups.
+Each user was assigned to their corresponding department group.
 
-Created a company directory structure containing general, confidential, restricted, and shared directories. Added fictional text documents for access-control testing.
+**Directory structure:**
 
-## 2. Initial ACL Investigation
+```text
+Company/
+├── HR/
+│   ├── General/
+│   └── Confidential/
+├── IT/
+│   ├── General/
+│   └── Restricted/
+└── Employees/
+    └── Shared/
+```
 
-Inspected the ACL on the HR confidential directory using PowerShell:
+Created fictional company documents in the directories to simulate a working business environment.
+
+## 2. Initial Permission Investigation
+
+Inspected the existing NTFS permissions using PowerShell:
 
 ```powershell
-(Get-Acl 'C:\Users\Admin1\Company\HR\Confidential').Access |
+(Get-Acl $path).Access |
     Format-Table IdentityReference, FileSystemRights, AccessControlType, IsInherited
 ```
 
-### Initial Observation
+**Initial findings:**
 
-The ACL output included inherited `FullControl` entries for:
+The directories contained three inherited permission entries:
 
-- `NT AUTHORITY\SYSTEM`
-- `BUILTIN\Administrators`
-- The local `Admin1` account
+- NT AUTHORITY\SYSTEM — FullControl
+- BUILTIN\Administrators — FullControl
+- Admin1 — FullControl
 
-No explicit HR group permission was present at that point.
+No explicit department-group permissions had been configured at this stage.
 
-The inherited entries indicated that permissions were being inherited from a parent directory. Additional testing was required to determine their effect on other users.
+This established the initial permission state before implementing the access-control policy.
 
-## 3. Configuring HR Access
+## 3. HR Confidential Permission Configuration
 
-Added an explicit `Modify` permission for the HR security group on the confidential HR directory.
+Assigned the HR group Modify permission on:
 
-```powershell
-$path = "C:\Users\Admin1\Company\HR\Confidential"
-$acl = Get-Acl $path
-
-$rule = New-Object System.Security.AccessControl.FileSystemAccessRule(
-    "HR",
-    "Modify",
-    "ContainerInherit,ObjectInherit",
-    "None",
-    "Allow"
-)
-
-$acl.AddAccessRule($rule)
-Set-Acl -Path $path -AclObject $acl
+```text
+C:\Users\Admin1\Company\HR\Confidential
 ```
 
-### Verification
+Used PowerShell to create and apply the permission rule.
 
-Inspected the ACL again.
+**Permission details:**
+- Group: HR
+- Permission: Modify
+- Access type: Allow
+- Applies to: This folder, subfolders and files
+- Inherited: False
 
-The output showed an entry for the local HR group with:
+Verified the permission using `Get-Acl`.
 
-- **Permission:** Modify, Synchronize
-- **Access control type:** Allow
-- **IsInherited:** False
+The HR group now had an explicit Modify permission while the existing inherited SYSTEM, Administrators and Admin1 entries remained intact.
 
-This confirmed that the explicit HR permission was present on the target directory.
-
-The inherited SYSTEM, Administrators, and Admin1 entries remained in place.
-
-## 4. Account and Sign-In Troubleshooting
-
-Attempted to sign in as an HR user through the Windows login screen. Only the Admin1 account was displayed, and an obvious "Other user" option was unavailable.
-
-Verified that the HR account existed and was enabled:
-
-```powershell
-Get-LocalUser -Name "Gervonta" |
-    Format-List Name, Enabled, PasswordRequired, PrincipalSource
-```
-
-The account was enabled. A password had also been set.
-
-Checked HR group membership:
-
-```powershell
-Get-LocalGroupMember -Group "HR"
-```
-
-The expected HR usernames appeared in the group membership output.
-
-Tried launching a process under alternate credentials. After entering the credentials, the `whoami` command in the resulting process identified the account as `Gervonta`.
-
-The PowerShell prompt continued to display a working directory under `C:\Users\Admin1`. The prompt path alone does not establish the identity of the process.
-
-## 5. Preliminary HR File Test
-
-While investigating HR access, opened a fictional text file in the confidential HR directory, entered the following text, and saved it:
-
-`Confidential HR test document. Authorized HR access verified.`
-
-The save operation succeeded.
-
-### Interpretation
-
-The file was successfully edited and saved during the investigation. However, the desktop session remained signed in as Admin1, and the file operation was not independently verified under Gervonta's security context.
-
-Therefore, this is a preliminary result, not yet conclusive evidence that the HR ACL correctly grants access to the intended user.
-
-## 6. Next Investigation Steps
-
-1. Confirm the security identity used for the HR file-access test. = VERIFIED
-2. Verify that the HR user can read and modify the confidential HR file. = VERIFIED
-3. Test the same file using an ordinary Employees account.
-4. Record whether access is allowed or denied.
-5. Investigate unexpected access, including inherited permissions and group memberships.
-6. Apply any necessary remediation and repeat the tests.
-7. Capture screenshots of the relevant ACLs and test results.
-
-## Current Status
-
-**Configuration:** An explicit HR `Modify` permission has been added and verified in the ACL output.
-
-**Testing:** A file was edited and saved, but the account context for that operation still requires confirmation.
-
-**Remediation:** Not yet completed. Unauthorized employee access has not yet been tested.
-
-----
-
-### HR Confidential Access Test
+## 4. HR Authorized Access Test
 
 **Test account:** Gervonta (member of the HR group)
 
-**Target directory:** `C:\Users\Admin1\Company\HR\Confidential`
+**Target directory:** HR\Confidential
 
 **Assigned permission:** Modify
 
 **Test procedure:**
 1. Launched a PowerShell session using Gervonta's credentials.
-2. Used `whoami` to verify the authenticated identity.
+2. Verified the authenticated identity using `whoami`.
 3. Listed the contents of the HR Confidential directory.
 4. Used `Add-Content` to append text to an existing file.
 5. Used `Get-Content` to verify the updated file contents.
 
 **Result:** Successful. Gervonta was able to access the directory, modify an existing file, and read the updated contents.
 
-**Conclusion:** The HR group's assigned Modify permission is functioning as expected for this test account.
+**Conclusion:** The HR group's assigned Modify permission was functioning as expected for this test account.
 
-----
-
-### Unauthorized Employee Access Test
+## 5. Unauthorized Employee Access Test — Initial Baseline
 
 **Test account:** Mary (member of the Employees group)
 
-**Target directory:** `C:\Users\Admin1\Company\HR\Confidential`
+**Target directory:** HR\Confidential
 
 **Expected permission:** No access
 
@@ -162,15 +108,39 @@ Therefore, this is a preliminary result, not yet conclusive evidence that the HR
 
 **Result:** Access denied. Windows returned an `UnauthorizedAccessException` when Mary attempted to enumerate the directory.
 
-**Conclusion:** The Employee account was unable to access the HR Confidential directory, as intended by the access-control policy.
+**Conclusion:** The Employee account could not access HR Confidential under the initial permission configuration.
 
-----
+## 6. Employee Shared Folder Permission Configuration
 
-### Employee Shared Folder Access Test
+Inspected the existing NTFS permissions on:
+
+```text
+C:\Users\Admin1\Company\Employees\Shared
+```
+
+The initial ACL contained inherited FullControl entries for:
+- NT AUTHORITY\SYSTEM
+- BUILTIN\Administrators
+- Admin1
+
+No explicit Employees group permission was present.
+
+Assigned the Employees group Modify permission.
+
+**Permission details:**
+- Group: Employees
+- Permission: Modify
+- Access type: Allow
+- Applies to: This folder, subfolders and files
+- Inherited: False
+
+Verified the new permission using `Get-Acl`.
+
+## 7. Employee Authorized Access Test
 
 **Test account:** Mary (member of the Employees group)
 
-**Target directory:** `C:\Users\Admin1\Company\Employees\Shared`
+**Target directory:** Employees\Shared
 
 **Assigned permission:** Modify
 
@@ -183,4 +153,17 @@ Therefore, this is a preliminary result, not yet conclusive evidence that the HR
 
 **Result:** Successful. Mary was able to access and modify a file in the Employees Shared directory.
 
-**Conclusion:** The Employees group's assigned Modify permission is functioning as expected for this test account.
+**Conclusion:** The Employees group's assigned Modify permission was functioning as expected for this test account.
+
+---
+
+## Key Technical Concepts Encountered
+
+- **Group membership:** Determines which security groups a user belongs to.
+- **NTFS permissions:** Define what users and groups can do with files and folders.
+- **ACL (Access Control List):** Contains the permission entries associated with a file or folder.
+- **Inheritance:** Allows permissions to flow from parent folders to child folders and files.
+- **Explicit permissions:** Permissions assigned directly to a particular file or folder.
+- **Implicit deny:** Access is denied when no applicable Allow permission grants the requested access.
+- **Least privilege:** Users should receive only the permissions necessary to perform their jobs.
+
