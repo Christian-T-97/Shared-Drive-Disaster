@@ -84,4 +84,32 @@ The intended access model is based on department responsibilities and least priv
 
 An intentional permissions misconfiguration demonstrated how excessive access can expose confidential company information.
 
-After the Employees group was granted explicit Read permission to HR Confidential, an Employee account was able to enumerate the directory
+After the Employees group was granted explicit Read permission to HR Confidential, an Employee account was able to enumerate the directory and read a confidential payroll document.
+
+**Identified issue:** Excessive NTFS permissions granted to an unauthorized department group.
+
+**Potential impact:** Unauthorized employees could view confidential HR information.
+
+**Current status:** Misconfiguration successfully reproduced. Remediation and final verification are pending.
+
+## Evidence
+
+Supporting screenshots documenting configuration, permission changes, and access tests are available in the `screenshots/` directory.
+
+For the detailed investigation process, commands, and findings, see [investigation-notes.md](investigation-notes.md).
+
+## Skills Demonstrated
+
+- Windows user and group administration
+- PowerShell fundamentals
+- NTFS permissions and ACL management
+- Access control and least privilege
+- Permission troubleshooting
+- Security testing and validation
+- Technical documentation and evidence collection
+
+## Project Status
+
+**In Progress**
+
+The remaining work includes removing the excessive Employees permission, verifying that HR access remains functional, and confirming that unauthorized Employee access is denied again.
