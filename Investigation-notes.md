@@ -394,6 +394,119 @@ No explicit Deny permissions were required. Unauthorized users lacked applicable
 
 **Conclusion:** Departmental access separation was successfully verified for both IT directories.
 
+---
+
+## 14. HR General Permission Configuration
+
+The HR General directory initially contained only inherited permissions for SYSTEM, Administrators, and Admin1.
+
+An explicit Modify permission was added for the HR group using PowerShell and the Windows NTFS access control list (ACL).
+
+The permission was configured to apply to the directory, its subdirectories, and files through container and object inheritance.
+
+After applying the ACL with `Set-Acl`, the saved permissions were inspected to confirm that:
+
+- HR had explicit Modify permission.
+- SYSTEM, Administrators, and Admin1 retained their inherited Full Control permissions.
+- No additional department permissions were present.
+
+## 15. HR General Access Verification
+
+Access was tested using separate department accounts.
+
+**Authorized access — HR**
+
+- Authenticated as Gervonta, an HR user.
+- Successfully listed the HR General directory.
+- Successfully modified an existing file.
+- Verified the file contents after modification.
+
+**Unauthorized access — Employees and IT**
+
+- Authenticated as Mary, an Employees user.
+- Attempted to list the HR General directory.
+- Access was denied.
+- Repeated the test using an IT account.
+- Access was denied.
+
+The results confirmed that HR users could modify HR General while Employees and IT users could not access it.
+
+## 16. Employees Shared Permission Configuration
+
+The Employees Shared directory already contained an explicit Modify permission for the Employees group.
+
+To support cross-department access, additional explicit Read permissions were configured for the HR and IT groups.
+
+The existing Employees Modify permission was preserved.
+
+After applying the changes, the saved ACL was inspected to confirm:
+
+- Employees — Modify
+- HR — Read
+- IT — Read
+- SYSTEM, Administrators, and Admin1 — inherited Full Control
+
+The HR and IT permissions were configured to apply to the directory, its subdirectories, and files.
+
+## 17. Employees Shared Access Verification
+
+Access was tested using accounts from all three departments.
+
+**Employees — Mary**
+
+- Successfully listed the directory.
+- Successfully read existing files.
+- Successfully modified an existing file.
+
+**HR — Gervonta**
+
+- Successfully listed the directory.
+- Successfully read existing files.
+- Modification attempts were denied.
+
+**IT — IT test account**
+
+- Successfully listed the directory.
+- Successfully read existing files.
+- Modification attempts were denied.
+
+The results confirmed that Employees retained Modify access while HR and IT had Read-only access.
+
+## 18. Final Company Root Directory Review
+
+The ACL on the Company root directory was inspected to identify permissions inherited or explicitly assigned at the parent level.
+
+The inspected ACL contained:
+
+- SYSTEM — Full Control
+- Administrators — Full Control
+- Admin1 — Full Control
+
+No explicit HR, IT, or Employees group permissions were listed on the Company root directory.
+
+A path-access test was then performed using Mary, an Employees account.
+
+- Mary successfully accessed Employees Shared through the Company directory path.
+- Mary was denied access to HR Confidential through the same path.
+
+This confirmed that the parent directory configuration did not prevent access to an authorized department folder or grant access to an unauthorized department folder.
+
+## Project Verification Summary
+
+All five directories were configured and tested against the intended access policy:
+
+| Directory | HR | IT | Employees |
+|---|---|---|---|
+| HR General | Modify | Denied | Denied |
+| HR Confidential | Modify | Denied | Denied |
+| IT General | Denied | Modify | Denied |
+| IT Restricted | Denied | Modify | Denied |
+| Employees Shared | Read | Read | Modify |
+
+A deliberate unauthorized permission was also introduced in HR Confidential, tested successfully, and subsequently removed. Final verification confirmed that the unauthorized access was no longer possible.
+
+**Project outcome:** The simulated department-level NTFS permission policy was configured, tested, and verified.
+
 ## Key Technical Concepts Encountered
 
 - **Group membership:** Determines which security groups a user belongs to.
